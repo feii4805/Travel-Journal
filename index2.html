@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Travel Journal</title>
+    <style>
+       
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        select, textarea, button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+
+        button {
+            background-color: #007bff;
+            color: #fff;
+            cursor: pointer;
+            border: none;
+        }
+
+        .journal-entry {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .map {
+            height: 300px;
+        }
+    </style>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+</head>
+<body>
+    <div class="container">
+        <h1>Travel Journal</h1>
+        <label for="CountryInput">Select a Country:</label>
+        <select id="CountryInput">
+            <option value="USA">USA</option>
+            <option value="UK">UK</option>
+            <option value="France">France</option>
+           
+        </select>
+        <label for="DateInput">Date:</label>
+        <input id="DateInput" type="date">
+        <label for="JournalEntry">Journal Entry:</label>
+        <textarea id="JournalEntry" placeholder="Write your journal entry here"></textarea>
+        <button id="submitEntry">Submit Entry</button>
+        <div id="journalContainer"></div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const countryInput = document.getElementById('CountryInput');
+            const dateInput = document.getElementById('DateInput');
+            const journalEntryTextarea = document.getElementById('JournalEntry');
+            const submitEntryButton = document.getElementById('submitEntry');
+            const journalContainer = document.getElementById('journalContainer');
+
+            submitEntryButton.addEventListener('click', submitJournalEntry);
+
+            function submitJournalEntry() {
+                const country = countryInput.value;
+                const date = dateInput.value;
+                const journalEntry = journalEntryTextarea.value;
+
+                
+                fetch(`https://artgeogallery-new.onrender.com/api/location?location=${country}`)
+                    .then(response => response.json())
+                    .then(data => {
+                       
+                        const entryElement = document.createElement('div');
+                        entryElement.classList.add('journal-entry');
+
+                        entryElement.innerHTML = `
+                            <h2>${country}</h2>
+                            <p>Date: ${date}</p>
+                            <img src="${data.image}" alt="${country}">
+                            <p>${journalEntry}</p>
+                            <div class="map" id="map-${country.replace(/[^a-zA-Z0-9]/g, '-')}"></div>
+                        `;
+
+                       
+                        journalContainer.appendChild(entryElement);
+
+                        
+                        countryInput.value = '';
+                        dateInput.value = '';
+                        journalEntryTextarea.value = '';
+
+                       
+                        initializeMap(country, data.latitude, data.longitude, `map-${country.replace(/[^a-zA-Z0-9]/g, '-')}`);
+                    })
+                    .catch(error => {
+                        console.error('Error fetching data:', error);
+                    });
+            }
+
+            function initializeMap(country, latitude, longitude, mapId) {
+                const map = L.map(mapId).setView([latitude, longitude], 10);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                }).addTo(map);
+
+                L.marker([latitude, longitude]).addTo(map)
+                    .bindPopup(country)
+                    .openPopup();
+
+               
+                map.invalidateSize();
+
+                fetch(`https://artgeogallery-new.onrender.com/api/location?location=${country}`)
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        if (!response.headers.get('content-type')?.includes('application/json')) {
+            throw new Error('Not a JSON response');
+        }
+        return response.json();
+    })
+    .then(data => {
+       
+    })
+    .catch(error => {
+        console.error('Error fetching data:', error);
+    });
+
+            }
+        });
+    </script>
+</body>
+</html>
